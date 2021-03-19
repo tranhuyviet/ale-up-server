@@ -33,7 +33,8 @@ export default {
                 // console.log(query, offset, limit);
 
                 // const products = await Product.find({ $or: [{ name: { $regex: '.*naudan.*' } }] })
-                const allProducts = await Product.find(query)
+                const total = await Product.find(query).count();
+                const products = await Product.find(query)
                     .sort({ discount: -1 })
                     .populate({
                         path: 'market',
@@ -41,13 +42,20 @@ export default {
                     .limit(limit)
                     .skip(offset);
 
-                if (!allProducts) {
-                    throw new Error('Can not get allProducts');
+                if (!products) {
+                    throw new Error('Can not get products');
                 }
 
-                // console.log(allProducts.length);
+                // console.log('Total:', total, ' Products Length: ', products.length, '  Offset: ', offset, ' Limit: ', limit);
+                const hasMore = total - offset - limit > 0 ? true : false;
+                // console.log('Hasmore', hasMore);
+                const returnProducts = {
+                    total,
+                    hasMore,
+                    products,
+                };
 
-                return allProducts;
+                return returnProducts;
                 // const products = paginateResults({
                 //     after,
                 //     pageSize,

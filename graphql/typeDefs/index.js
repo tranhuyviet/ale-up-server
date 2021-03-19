@@ -19,14 +19,14 @@ export default gql`
     }
 
     type ReturnProducts {
-        cursor: String!
+        total: Int!
         hasMore: Boolean!
         products: [Product]!
     }
 
     type Query {
         "Get all products"
-        products(name: String, market: String, offset: Int, limit: Int): [Product!]
+        products(name: String, market: String, offset: Int, limit: Int): ReturnProducts!
         "Get all markets"
         markets: [Market]!
     }
