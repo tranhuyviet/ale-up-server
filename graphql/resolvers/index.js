@@ -27,7 +27,13 @@ export default {
                 }
 
                 if (market && market !== 'all') {
-                    query = { ...query, market };
+                    console.log(market);
+                    const checkMarket = await Market.find({ name: market });
+                    if (!checkMarket) {
+                        throw new Error('Can not find the market');
+                    }
+                    console.log('checkMarket', checkMarket[0].id);
+                    query = { ...query, market: checkMarket[0].id };
                 }
 
                 let sortDB = {};
@@ -42,6 +48,7 @@ export default {
                 } else {
                     sortDB = { discount: -1 };
                 }
+
                 // console.log(sortDB);
                 // console.log(query, offset, limit);
 
