@@ -19,7 +19,7 @@ export default {
     // },
     Query: {
         // Get all products
-        products: async (_, { name, market, offset = 0, limit = 20 }) => {
+        products: async (_, { name, market, offset = 0, limit = 20, sort = 'discount' }) => {
             try {
                 let query = {};
                 if (name) {
@@ -30,12 +30,25 @@ export default {
                     query = { ...query, market };
                 }
 
+                let sortDB = {};
+                if (sort === 'nameAO') {
+                    sortDB = { name: 1 };
+                } else if (sort === 'nameOA') {
+                    sortDB = { name: -1 };
+                } else if (sort === 'priceAO') {
+                    sortDB = { newPrice: 1 };
+                } else if (sort === 'priceOA') {
+                    sortDB = { newPrice: -1 };
+                } else {
+                    sortDB = { discount: -1 };
+                }
+                // console.log(sortDB);
                 // console.log(query, offset, limit);
 
                 // const products = await Product.find({ $or: [{ name: { $regex: '.*naudan.*' } }] })
-                const total = await Product.find(query).count();
+                const total = await Product.find(query).countDocuments();
                 const products = await Product.find(query)
-                    .sort({ discount: -1 })
+                    .sort(sortDB)
                     .populate({
                         path: 'market',
                     })

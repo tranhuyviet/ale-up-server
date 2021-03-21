@@ -26,7 +26,7 @@ export default gql`
 
     type Query {
         "Get all products"
-        products(name: String, market: String, offset: Int, limit: Int): ReturnProducts!
+        products(name: String, market: String, offset: Int, limit: Int, sort: String): ReturnProducts!
         "Get all markets"
         markets: [Market]!
     }
