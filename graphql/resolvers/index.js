@@ -19,7 +19,7 @@ export default {
     // },
     Query: {
         // Get all products
-        products: async (_, { name, market, offset = 0, limit = 20, sort = 'discount' }) => {
+        products: async (_, { name, market, discount, offset = 0, limit = 20, sort = 'discount' }) => {
             try {
                 let query = {};
                 if (name) {
@@ -27,14 +27,18 @@ export default {
                 }
 
                 if (market && market !== 'all') {
-                    console.log(market);
                     const checkMarket = await Market.find({ name: market });
                     if (!checkMarket) {
                         throw new Error('Can not find the market');
                     }
-                    console.log('checkMarket', checkMarket[0].id);
                     query = { ...query, market: checkMarket[0].id };
                 }
+
+                if (discount.length > 0) {
+                    query = { ...query, $and: [{ discount: { $gte: discount[0] * 1 } }, { discount: { $lte: discount[1] * 1 } }] };
+                }
+
+                console.log('Variables:', name, market, discount);
 
                 let sortDB = {};
                 if (sort === 'nameAO') {
@@ -45,13 +49,13 @@ export default {
                     sortDB = { newPrice: 1 };
                 } else if (sort === 'priceOA') {
                     sortDB = { newPrice: -1 };
+                } else if (sort === 'discount') {
+                    sortDB = { discount: -1 };
                 } else {
                     sortDB = { discount: -1 };
                 }
 
                 // console.log(sortDB);
-                // console.log(query, offset, limit);
-
                 // const products = await Product.find({ $or: [{ name: { $regex: '.*naudan.*' } }] })
                 const total = await Product.find(query).countDocuments();
                 const products = await Product.find(query)
@@ -94,6 +98,26 @@ export default {
                 //     cursor,
                 //     hasMore,
                 // };
+            } catch (error) {
+                console.log(error);
+            }
+        },
+
+        // Get products popular to introduce in hompage
+        productIntroduce: async () => {
+            try {
+                const markets = await Market.find();
+                let products = [];
+                for (const market of markets) {
+                    const product = await Product.find({ market: market.id })
+                        .populate({
+                            path: 'market',
+                        })
+                        .limit(1);
+                    products.push(product[0]);
+                }
+                // console.log(products);
+                return products;
             } catch (error) {
                 console.log(error);
             }

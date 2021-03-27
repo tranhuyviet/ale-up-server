@@ -26,7 +26,11 @@ export default gql`
 
     type Query {
         "Get all products"
-        products(name: String, market: String, offset: Int, limit: Int, sort: String): ReturnProducts!
+        products(name: String, market: String, discount: [Int!], offset: Int, limit: Int, sort: String): ReturnProducts!
+
+        "Get products popular to introduce in hompage"
+        productIntroduce: [Product]!
+
         "Get all markets"
         markets: [Market]!
     }
