@@ -94,7 +94,7 @@ export default {
                 } else if (sort === 'discount') {
                     sortDB = { discount: -1 };
                 } else {
-                    sortDB = { discount: -1 };
+                    sortDB = {};
                 }
 
                 // console.log(sortDB);
