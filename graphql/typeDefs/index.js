@@ -2,7 +2,7 @@ import { gql } from 'apollo-server-express';
 
 export default gql`
     type Product {
-        id: ID!
+        _id: ID!
         market: Market
         name: String!
         newPrice: Float
@@ -13,7 +13,7 @@ export default gql`
     }
 
     type Market {
-        id: ID!
+        _id: ID!
         name: String!
         logo: String
     }

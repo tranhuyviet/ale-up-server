@@ -1,5 +1,8 @@
 import Product from '../../models/productModel.js';
 import Market from '../../models/marketModel.js';
+import mongoose from 'mongoose';
+
+const ObjectId = mongoose.Types.ObjectId;
 
 function queryName(name, discount, price) {
     let rtName = [];
@@ -38,18 +41,20 @@ export default {
     // },
     Query: {
         // Get all products
-        products: async (_, { name, market, discount, price, offset = 0, limit = 20, sort = 'discount' }) => {
+        products: async (_, { name = '', market = '', discount = [], price = [], offset = 0, limit = 24, sort = 'dayDeal' }) => {
             try {
                 let query = {};
                 // if (name) {
                 query = queryName(name, discount, price);
                 // }
 
+                let marketId = '';
                 if (market && market !== 'all') {
                     const checkMarket = await Market.find({ name: market });
                     if (!checkMarket) {
                         throw new Error('Can not find the market');
                     }
+                    marketId = checkMarket[0].id;
                     query = { ...query, market: checkMarket[0].id };
                 }
 
@@ -74,7 +79,7 @@ export default {
                 //     query = { ...query, $and: [{ newPrice: { $gte: price[0] * 1 } }, { newPrice: { $lte: price[1] * 1 } }] };
                 // }
 
-                console.log(query);
+                //console.log(query);
                 // console.log('Variables:', name, market, discount, price);
 
                 let sortDB = {};
@@ -96,13 +101,94 @@ export default {
                 // const products = await Product.find({ $or: [{ name: { $regex: '.*naudan.*' } }] })
 
                 const total = await Product.find(query).countDocuments();
-                const products = await Product.find(query)
-                    .sort(sortDB)
-                    .populate({
-                        path: 'market',
-                    })
-                    .limit(limit)
-                    .skip(offset);
+
+                /* let aggregate = [];
+                const aggPopulate = [
+                    {
+                        $lookup: {
+                            from: 'markets',
+                            localField: 'market',
+                            foreignField: '_id',
+                            as: 'market',
+                        },
+                    },
+                    {
+                        $unwind: '$market',
+                    },
+                ];
+
+                const aggDayDeal = {
+                    $sample: {
+                        size: 24,
+                    },
+                };
+
+                // them theo market
+                // neu market = 'all' nghia la se tim them tat ca -> khong can match
+                // neu market !== all nghia la se tiem market theo id cua market do
+
+                const aggLimit = {
+                    $limit: limit,
+                };
+
+                const aggSkip = {
+                    $skip: offset,
+                };
+
+                if (market && market !== 'all') {
+                    const aggMarket = {
+                        $match: {
+                            market: ObjectId(marketId),
+                        },
+                    };
+                    aggregate = [...aggregate, aggMarket, ...aggPopulate, aggLimit, aggSkip];
+                } else {
+                    console.log('cac');
+                    aggregate = [...aggPopulate, aggDayDeal];
+                }
+
+                // aggregate = [...aggregate, ...aggPopulate, aggLimit];
+
+                console.log('agg', aggregate);
+
+                const products = await Product.aggregate(aggregate);
+                */
+                let products = [];
+                if (sort === 'dayDeal' && name === '' && market === 'all' && price && discount) {
+                    console.log('tim theo aggregate');
+                    products = await Product.aggregate([
+                        {
+                            $match: {
+                                discount: { $gte: 20 },
+                            },
+                        },
+                        {
+                            $lookup: {
+                                from: 'markets',
+                                localField: 'market',
+                                foreignField: '_id',
+                                as: 'market',
+                            },
+                        },
+                        {
+                            $unwind: '$market',
+                        },
+                        {
+                            $sample: {
+                                size: 24,
+                            },
+                        },
+                    ]);
+                } else {
+                    console.log('theo bo loc');
+                    products = await Product.find(query)
+                        .sort(sortDB)
+                        .populate({
+                            path: 'market',
+                        })
+                        .limit(limit)
+                        .skip(offset);
+                }
 
                 // const productsGetMinMaxPrice = await Product.find().sort({ newPrice: 1 });
                 // const total = productsGetMinMaxPrice.length;
@@ -148,16 +234,41 @@ export default {
         // Get products popular to introduce in hompage
         productIntroduce: async () => {
             try {
-                const markets = await Market.find();
-                let products = [];
-                for (const market of markets) {
-                    const product = await Product.find({ market: market.id })
-                        .populate({
-                            path: 'market',
-                        })
-                        .limit(1);
-                    products.push(product[0]);
-                }
+                // const markets = await Market.find();
+                // let products = [];
+                // for (const market of markets) {
+                //     const product = await Product.find({ market: market.id })
+                //         .populate({
+                //             path: 'market',
+                //         })
+                //         .limit(1);
+                //     products.push(product[0]);
+                // }
+                // // console.log(products);
+                // return products;
+                const products = await Product.aggregate([
+                    {
+                        $match: {
+                            discount: { $gte: 20 },
+                        },
+                    },
+                    {
+                        $lookup: {
+                            from: 'markets',
+                            localField: 'market',
+                            foreignField: '_id',
+                            as: 'market',
+                        },
+                    },
+                    {
+                        $unwind: '$market',
+                    },
+                    {
+                        $sample: {
+                            size: 24,
+                        },
+                    },
+                ]);
                 // console.log(products);
                 return products;
             } catch (error) {
