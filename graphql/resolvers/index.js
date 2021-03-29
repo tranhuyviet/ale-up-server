@@ -91,8 +91,10 @@ export default {
                     sortDB = { newPrice: 1 };
                 } else if (sort === 'priceOA') {
                     sortDB = { newPrice: -1 };
-                } else if (sort === 'discount') {
+                } else if (sort === 'discountOA') {
                     sortDB = { discount: -1 };
+                } else if (sort === 'discountAO') {
+                    sortDB = { discount: 1 };
                 } else {
                     sortDB = {};
                 }
@@ -153,8 +155,9 @@ export default {
 
                 const products = await Product.aggregate(aggregate);
                 */
+                console.log('discount', discount, sortDB);
                 let products = [];
-                if (sort === 'dayDeal' && name === '' && market === 'all' && price && discount) {
+                if (sort === 'dayDeal' && name === '' && market === 'all' && price.length === 0 && discount.length === 0) {
                     console.log('tim theo aggregate');
                     products = await Product.aggregate([
                         {
