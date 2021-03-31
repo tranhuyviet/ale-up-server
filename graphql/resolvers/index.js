@@ -1,8 +1,9 @@
 import Product from '../../models/productModel.js';
+import Tag from '../../models/tagModel.js';
 import Market from '../../models/marketModel.js';
 import mongoose from 'mongoose';
 
-const ObjectId = mongoose.Types.ObjectId;
+// const ObjectId = mongoose.Types.ObjectId;
 
 function queryName(name, discount, price) {
     let rtName = [];
@@ -41,22 +42,43 @@ export default {
     // },
     Query: {
         // Get all products
-        products: async (_, { name = '', market = '', discount = [], price = [], offset = 0, limit = 24, sort = 'dayDeal' }) => {
+        products: async (_, { tag = 'all', name = '', market = 'all', discount = [], price = [], offset = 0, limit = 24, sort = 'dayDeal' }) => {
             try {
                 let query = {};
                 // if (name) {
                 query = queryName(name, discount, price);
                 // }
 
-                let marketId = '';
+                // let marketId = '';
                 if (market && market !== 'all') {
                     const checkMarket = await Market.find({ name: market });
                     if (!checkMarket) {
                         throw new Error('Can not find the market');
                     }
-                    marketId = checkMarket[0].id;
-                    query = { ...query, market: checkMarket[0].id };
+                    const marketId = checkMarket[0]._id;
+                    query = { ...query, market: marketId };
                 }
+
+                if (tag && tag !== 'all') {
+                    const checkTag = await Tag.find({ tag: tag });
+                    if (!checkTag && checkTag.length === 0) {
+                        throw new Error('Can not find the tag');
+                    }
+                    const tagId = checkTag[0]._id;
+                    query = { ...query, tag: tagId };
+                }
+                console.log('tag and market', tag, market);
+                // const isMarketId = mongoose.isValidObjectId(market);
+                // if (isMarketId === true) {
+                //     query = { ...query, market: mongoose.Types.ObjectId(market) };
+                // }
+
+                // const isTagId = mongoose.isValidObjectId(tag);
+                // if (isTagId === true) {
+                //     query = { ...query, tag: mongoose.Types.ObjectId(tag) };
+                // }
+
+                console.log('query', query);
 
                 // if (discount.length === 0) discount = [0, 100];
                 // if (price.length === 0) price = [0, 5000];
@@ -157,7 +179,7 @@ export default {
                 */
                 console.log('discount', discount, sortDB);
                 let products = [];
-                if (sort === 'dayDeal' && name === '' && market === 'all' && price.length === 0 && discount.length === 0) {
+                if (sort === 'dayDeal' && name === '' && market === 'all' && tag === 'all' && price.length === 0 && discount.length === 0) {
                     console.log('tim theo aggregate');
                     products = await Product.aggregate([
                         {
@@ -192,7 +214,7 @@ export default {
                         .limit(limit)
                         .skip(offset);
                 }
-
+                console.log('products', products[0]);
                 // const productsGetMinMaxPrice = await Product.find().sort({ newPrice: 1 });
                 // const total = productsGetMinMaxPrice.length;
                 // console.log('CAC', productsGetMinMaxPrice[0].newPrice, productsGetMinMaxPrice[productsGetMinMaxPrice.length - 1].newPrice);
@@ -317,6 +339,21 @@ export default {
                 }
 
                 return markets;
+            } catch (error) {
+                console.log(error);
+            }
+        },
+
+        // Get all tags
+        tags: async () => {
+            try {
+                const tags = await Tag.find();
+
+                if (!tags) {
+                    throw new Error('Can not get tags');
+                }
+
+                return tags;
             } catch (error) {
                 console.log(error);
             }
