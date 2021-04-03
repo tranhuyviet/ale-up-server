@@ -49,5 +49,11 @@ export default gql`
 
         "Get all markets"
         markets: [Market]!
+
+        "Get markets by tag"
+        marketsByTag(tag: String): [Market!]
+
+        "Get tags by market"
+        tagsByMarket(market: String): [Tag!]
     }
 `;

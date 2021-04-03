@@ -1,6 +1,7 @@
 import Product from '../../models/productModel.js';
 import Tag from '../../models/tagModel.js';
 import Market from '../../models/marketModel.js';
+import TagMarket from '../../models/tagMarketModel.js';
 import mongoose from 'mongoose';
 
 // const ObjectId = mongoose.Types.ObjectId;
@@ -31,7 +32,7 @@ function queryName(name, discount, price) {
         };
     }
 
-    console.log('return obj', returnObj);
+    // console.log('return obj', returnObj);
 
     return returnObj;
 }
@@ -67,7 +68,7 @@ export default {
                     const tagId = checkTag[0]._id;
                     query = { ...query, tag: tagId };
                 }
-                console.log('tag and market', tag, market);
+                // console.log('tag and market', tag, market);
                 // const isMarketId = mongoose.isValidObjectId(market);
                 // if (isMarketId === true) {
                 //     query = { ...query, market: mongoose.Types.ObjectId(market) };
@@ -78,7 +79,7 @@ export default {
                 //     query = { ...query, tag: mongoose.Types.ObjectId(tag) };
                 // }
 
-                console.log('query', query);
+                // console.log('query', query);
 
                 // if (discount.length === 0) discount = [0, 100];
                 // if (price.length === 0) price = [0, 5000];
@@ -118,7 +119,7 @@ export default {
                 } else if (sort === 'discountAO') {
                     sortDB = { discount: 1 };
                 } else {
-                    sortDB = {};
+                    sortDB = { discount: -1 };
                 }
 
                 // console.log(sortDB);
@@ -177,7 +178,7 @@ export default {
 
                 const products = await Product.aggregate(aggregate);
                 */
-                console.log('discount', discount, sortDB);
+                // console.log('discount', discount, sortDB);
                 let products = [];
                 if (sort === 'dayDeal' && name === '' && market === 'all' && tag === 'all' && price.length === 0 && discount.length === 0) {
                     console.log('tim theo aggregate');
@@ -214,7 +215,7 @@ export default {
                         .limit(limit)
                         .skip(offset);
                 }
-                console.log('products', products[0]);
+                // console.log('products', products[0]);
                 // const productsGetMinMaxPrice = await Product.find().sort({ newPrice: 1 });
                 // const total = productsGetMinMaxPrice.length;
                 // console.log('CAC', productsGetMinMaxPrice[0].newPrice, productsGetMinMaxPrice[productsGetMinMaxPrice.length - 1].newPrice);
@@ -347,13 +348,68 @@ export default {
         // Get all tags
         tags: async () => {
             try {
-                const tags = await Tag.find();
+                const tags = await Tag.find().sort({ tag: 1 });
 
                 if (!tags) {
                     throw new Error('Can not get tags');
                 }
 
                 return tags;
+            } catch (error) {
+                console.log(error);
+            }
+        },
+
+        // Get markets by tag:
+        marketsByTag: async (_, { tag }) => {
+            try {
+                if (tag === 'all') return null;
+                const tagFound = await Tag.findOne({ tag });
+
+                if (!tagFound) {
+                    throw new Error('Can not get tag');
+                }
+                console.log(tagFound);
+
+                const markets = await TagMarket.find({ tagId: tagFound._id })
+                    .populate({
+                        path: 'marketId',
+                    })
+                    .sort({ name: 1 });
+
+                if (!markets) {
+                    throw new Error('Can not get markets by tagId');
+                }
+
+                const returnMarkets = markets.map((market) => market.marketId);
+
+                // // console.log(returnMarkets);
+                return returnMarkets;
+            } catch (error) {
+                console.log(error);
+            }
+        },
+
+        // Get tags by market
+        tagsByMarket: async (_, { market }) => {
+            try {
+                if (market === 'all') return null;
+
+                const marketFound = await Market.findOne({ name: market });
+
+                if (!marketFound) {
+                    throw new Error('Market not found');
+                }
+
+                const tags = await TagMarket.find({ marketId: marketFound._id }).populate({ path: 'tagId' });
+
+                if (!tags) {
+                    throw new Error('Tags not found');
+                }
+
+                const returnTags = tags.map((tag) => tag.tagId);
+
+                return returnTags;
             } catch (error) {
                 console.log(error);
             }
